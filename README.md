@@ -107,7 +107,7 @@ This will:
 python app.py
 ```
 
-The application will be available at: **http://localhost:5000**
+The application will be available at: **https://medical-pharmacy-inventory-manageme.vercel.app/**
 
 ## 📊 Database Schema
 
@@ -256,4 +256,5 @@ This is an academic project for educational purposes.
 **Database**: pharmacy.db (SQLite)
 
 **Total Records**: 1000+ medicines, 5 suppliers
+
 
