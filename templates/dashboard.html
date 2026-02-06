@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Smart Pharmacy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-5"><i class="bi bi-speedometer2"></i> Inventory Dashboard</h1>
+            <p class="text-muted">Real-time overview of your pharmacy inventory</p>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <!-- Total Stock Card -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-primary shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Stock</h6>
+                            <h2 class="mb-0">{{ stats.total_stock }}</h2>
+                            <small class="text-muted">units</small>
+                        </div>
+                        <div class="text-primary">
+                            <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Today Card -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-success shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Sales Today</h6>
+                            <h2 class="mb-0">₹{{ "%.2f"|format(stats.sales_today) }}</h2>
+                            <small class="text-muted">revenue</small>
+                        </div>
+                        <div class="text-success">
+                            <i class="bi bi-currency-rupee" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Alert Card -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-warning shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Low Stock</h6>
+                            <h2 class="mb-0">{{ stats.low_stock_count }}</h2>
+                            <small class="text-muted">items</small>
+                        </div>
+                        <div class="text-warning">
+                            <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Expiring Soon Card -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-danger shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Expiring Soon</h6>
+                            <h2 class="mb-0">{{ stats.expiring_count }}</h2>
+                            <small class="text-muted">medicines</small>
+                        </div>
+                        <div class="text-danger">
+                            <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Tables Row -->
+    <div class="row">
+        <!-- Expiring Soon Table -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-x"></i> Medicines Expiring in &lt; 30 Days</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if stats.expiring_medicines %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Medicine Name</th>
+                                    <th>Expiry Date</th>
+                                    <th>Days Left</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for medicine in stats.expiring_medicines[:10] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ medicine.name }}</strong><br>
+                                        <small class="text-muted">{{ medicine.manufacturer }}</small>
+                                    </td>
+                                    <td>{{ medicine.expiry_date.strftime('%d-%b-%Y') }}</td>
+                                    <td>
+                                        {% set days = medicine.days_until_expiry() %}
+                                        {% if days < 0 %} <span class="badge bg-danger">Expired</span>
+                                            {% elif days <= 7 %} <span class="badge bg-danger">{{ days }} days</span>
+                                                {% elif days <= 15 %} <span class="badge bg-warning">{{ days }}
+                                                    days</span>
+                                                    {% else %}
+                                                    <span class="badge bg-info">{{ days }} days</span>
+                                                    {% endif %}
+                                    </td>
+                                    <td>{{ medicine.stock_quantity }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-2">No medicines expiring soon!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Low Stock Table -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Low Stock Alerts (&lt; 10 units)</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if stats.low_stock_medicines %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Medicine Name</th>
+                                    <th>Category</th>
+                                    <th>Current Stock</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for medicine in stats.low_stock_medicines[:10] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ medicine.name }}</strong><br>
+                                        <small class="text-muted">{{ medicine.manufacturer }}</small>
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ medicine.category }}</span></td>
+                                    <td>
+                                        {% if medicine.stock_quantity == 0 %}
+                                        <span class="badge bg-danger">Out of Stock</span>
+                                        {% elif medicine.stock_quantity < 5 %} <span class="badge bg-danger">{{
+                                            medicine.stock_quantity }}</span>
+                                            {% else %}
+                                            <span class="badge bg-warning">{{ medicine.stock_quantity }}</span>
+                                            {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('edit_medicine', id=medicine.id) }}"
+                                            class="btn btn-sm btn-primary">
+                                            <i class="bi bi-pencil"></i> Restock
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+                        <p class="mt-2">All medicines are well stocked!</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seasonal Recommendations -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-sun"></i> Seasonal Recommendations for {{ stats.current_season }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if stats.seasonal_medicines %}
+                    <p class="text-muted">These medicines are recommended for stocking during {{ stats.current_season }}
+                        season:</p>
+                    <div class="row">
+                        {% for medicine in stats.seasonal_medicines %}
+                        <div class="col-md-4 col-lg-3 mb-3">
+                            <div class="card h-100 border-info">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ medicine.name }}</h6>
+                                    <p class="card-text mb-2">
+                                        <small class="text-muted">{{ medicine.category }}</small><br>
+                                        <strong>₹{{ "%.2f"|format(medicine.price) }}</strong>
+                                    </p>
+                                    <p class="mb-0">
+                                        {% if medicine.seasonal_tag == 'Winter' %}
+                                        <span class="badge badge-season-winter">{{ medicine.seasonal_tag }}</span>
+                                        {% elif medicine.seasonal_tag == 'Monsoon' %}
+                                        <span class="badge badge-season-monsoon">{{ medicine.seasonal_tag }}</span>
+                                        {% elif medicine.seasonal_tag == 'Summer' %}
+                                        <span class="badge badge-season-summer">{{ medicine.seasonal_tag }}</span>
+                                        {% elif medicine.seasonal_tag == 'Spring' %}
+                                        <span class="badge badge-season-spring">{{ medicine.seasonal_tag }}</span>
+                                        {% else %}
+                                        <span class="badge bg-info">{{ medicine.seasonal_tag }}</span>
+                                        {% endif %}
+                                        <span class="badge bg-secondary">Stock: {{ medicine.stock_quantity }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No specific seasonal recommendations at this time.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

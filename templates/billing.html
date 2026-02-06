@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Billing - Smart Pharmacy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6"><i class="bi bi-receipt"></i> Billing System</h1>
+            <p class="text-muted">Create invoices and process sales</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Medicine Selection -->
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-cart-plus"></i> Add Items to Cart</h5>
+                </div>
+                <div class="card-body">
+                    <form id="addToCartForm">
+                        <div class="row">
+                            <!-- Medicine Selection -->
+                            <div class="col-md-6 mb-3">
+                                <label for="medicine_id" class="form-label">Select Medicine</label>
+                                <select class="form-select" id="medicine_id" required>
+                                    <option value="">Choose medicine...</option>
+                                    {% for medicine in medicines %}
+                                    <option value="{{ medicine.id }}" data-price="{{ medicine.price }}"
+                                        data-stock="{{ medicine.stock_quantity }}" data-name="{{ medicine.name }}">
+                                        {{ medicine.name }} - ₹{{ "%.2f"|format(medicine.price) }} (Stock: {{
+                                        medicine.stock_quantity }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Quantity -->
+                            <div class="col-md-4 mb-3">
+                                <label for="quantity" class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" min="1" value="1" required>
+                                <small class="text-muted" id="stockInfo"></small>
+                            </div>
+
+                            <!-- Add Button -->
+                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-plus-circle"></i> Add
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Cart -->
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-cart"></i> Current Cart</h5>
+                </div>
+                <div class="card-body">
+                    <div id="cartItems">
+                        <p class="text-muted text-center py-4">Cart is empty</p>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0">Total:</h4>
+                        <h3 class="mb-0 text-success" id="cartTotal">₹0.00</h3>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" id="generateInvoiceBtn"
+                            onclick="generateInvoice()" disabled>
+                            <i class="bi bi-file-earmark-text"></i> Generate Invoice
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearCart()">
+                            <i class="bi bi-trash"></i> Clear Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden form for invoice generation -->
+<form id="invoiceForm" method="POST" action="{{ url_for('generate_invoice') }}" style="display: none;">
+    <input type="hidden" name="cart_data" id="cartDataInput">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Cart array to store items
+    let cart = [];
+
+    // Update stock info when medicine is selected
+    document.getElementById('medicine_id').addEventListener('change', function () {
+        const selectedOption = this.options[this.selectedIndex];
+        const stock = selectedOption.getAttribute('data-stock');
+        const stockInfo = document.getElementById('stockInfo');
+
+        if (stock) {
+            stockInfo.textContent = `Available: ${stock} units`;
+            document.getElementById('quantity').max = stock;
+        } else {
+            stockInfo.textContent = '';
+        }
+    });
+
+    // Add to cart function
+    document.getElementById('addToCartForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const medicineSelect = document.getElementById('medicine_id');
+        const selectedOption = medicineSelect.options[medicineSelect.selectedIndex];
+        const quantity = parseInt(document.getElementById('quantity').value);
+
+        if (!selectedOption.value) {
+            alert('Please select a medicine');
+            return;
+        }
+
+        const medicineId = selectedOption.value;
+        const medicineName = selectedOption.getAttribute('data-name');
+        const price = parseFloat(selectedOption.getAttribute('data-price'));
+        const stock = parseInt(selectedOption.getAttribute('data-stock'));
+
+        // Validate quantity
+        if (quantity > stock) {
+            alert(`Only ${stock} units available in stock!`);
+            return;
+        }
+
+        if (quantity < 1) {
+            alert('Quantity must be at least 1');
+            return;
+        }
+
+        // Check if medicine already in cart
+        const existingItem = cart.find(item => item.medicine_id === medicineId);
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({
+                medicine_id: medicineId,
+                name: medicineName,
+                price: price,
+                quantity: quantity
+            });
+        }
+
+        updateCartDisplay();
+
+        // Reset form
+        medicineSelect.value = '';
+        document.getElementById('quantity').value = 1;
+        document.getElementById('stockInfo').textContent = '';
+    });
+
+    // Update cart display
+    function updateCartDisplay() {
+        const cartItemsDiv = document.getElementById('cartItems');
+        const cartTotalDiv = document.getElementById('cartTotal');
+        const generateBtn = document.getElementById('generateInvoiceBtn');
+
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = '<p class="text-muted text-center py-4">Cart is empty</p>';
+            cartTotalDiv.textContent = '₹0.00';
+            generateBtn.disabled = true;
+            return;
+        }
+
+        let html = '<div class="list-group">';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            const itemTotal = item.price * item.quantity;
+            total += itemTotal;
+
+            html += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${item.name}</h6>
+                        <small class="text-muted">₹${item.price.toFixed(2)} × ${item.quantity} = ₹${itemTotal.toFixed(2)}</small>
+                    </div>
+                    <button type="button" 
+                            class="btn btn-sm btn-outline-danger" 
+                            onclick="removeFromCart(${index})">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        });
+
+        html += '</div>';
+
+        cartItemsDiv.innerHTML = html;
+        cartTotalDiv.textContent = `₹${total.toFixed(2)}`;
+        generateBtn.disabled = false;
+    }
+
+    // Remove item from cart
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartDisplay();
+    }
+
+    // Clear cart
+    function clearCart() {
+        if (cart.length === 0) return;
+
+        if (confirm('Are you sure you want to clear the cart?')) {
+            cart = [];
+            updateCartDisplay();
+        }
+    }
+
+    // Generate invoice
+    function generateInvoice() {
+        if (cart.length === 0) {
+            alert('Cart is empty!');
+            return;
+        }
+
+        // Prepare cart data
+        const cartData = JSON.stringify(cart);
+        document.getElementById('cartDataInput').value = cartData;
+
+        // Submit form
+        document.getElementById('invoiceForm').submit();
+    }
+</script>
+{% endblock %}

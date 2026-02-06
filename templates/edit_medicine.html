@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Medicine - Smart Pharmacy{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="display-6"><i class="bi bi-pencil"></i> Edit Medicine</h1>
+                <p class="text-muted">Update medicine details</p>
+            </div>
+
+            <!-- Edit Medicine Form -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_medicine', id=medicine.id) }}">
+                        <div class="row">
+                            <!-- Medicine Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Medicine Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    value="{{ medicine.name }}" required>
+                            </div>
+
+                            <!-- Manufacturer -->
+                            <div class="col-md-6 mb-3">
+                                <label for="manufacturer" class="form-label">Manufacturer <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manufacturer" name="manufacturer"
+                                    value="{{ medicine.manufacturer }}" required>
+                            </div>
+
+                            <!-- Category -->
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="category" name="category" required>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat }}" {% if cat==medicine.category %}selected{% endif %}>{{ cat
+                                        }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹) <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="price" name="price" step="0.01" min="0"
+                                    value="{{ medicine.price }}" required>
+                            </div>
+
+                            <!-- Stock Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label for="stock_quantity" class="form-label">Stock Quantity <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
+                                    min="0" value="{{ medicine.stock_quantity }}" required>
+                            </div>
+
+                            <!-- Expiry Date -->
+                            <div class="col-md-6 mb-3">
+                                <label for="expiry_date" class="form-label">Expiry Date <span
+                                        class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="expiry_date" name="expiry_date"
+                                    value="{{ medicine.expiry_date.strftime('%Y-%m-%d') }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('inventory') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Update Medicine
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

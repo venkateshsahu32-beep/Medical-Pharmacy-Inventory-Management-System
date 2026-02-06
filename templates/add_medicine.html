@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Add Medicine - Smart Pharmacy{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Page Header -->
+            <div class="mb-4">
+                <h1 class="display-6"><i class="bi bi-plus-circle"></i> Add New Medicine</h1>
+                <p class="text-muted">Enter medicine details to add to inventory</p>
+            </div>
+
+            <!-- Add Medicine Form -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_medicine') }}">
+                        <div class="row">
+                            <!-- Medicine Name -->
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Medicine Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    placeholder="e.g., Paracetamol 500mg" required>
+                            </div>
+
+                            <!-- Manufacturer -->
+                            <div class="col-md-6 mb-3">
+                                <label for="manufacturer" class="form-label">Manufacturer <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="manufacturer" name="manufacturer"
+                                    placeholder="e.g., Cipla" required>
+                            </div>
+
+                            <!-- Category -->
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category <span
+                                        class="text-danger">*</span></label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat }}">{{ cat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <!-- Price -->
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹) <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="price" name="price" step="0.01" min="0"
+                                    placeholder="0.00" required>
+                            </div>
+
+                            <!-- Stock Quantity -->
+                            <div class="col-md-6 mb-3">
+                                <label for="stock_quantity" class="form-label">Stock Quantity <span
+                                        class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="stock_quantity" name="stock_quantity"
+                                    min="0" placeholder="0" required>
+                            </div>
+
+                            <!-- Expiry Date -->
+                            <div class="col-md-6 mb-3">
+                                <label for="expiry_date" class="form-label">Expiry Date <span
+                                        class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="expiry_date" name="expiry_date" required>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('inventory') }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Add Medicine
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
