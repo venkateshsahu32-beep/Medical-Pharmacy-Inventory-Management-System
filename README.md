@@ -251,8 +251,9 @@ This is an academic project for educational purposes.
 
 ---
 
-**Access the application**: http://localhost:5000
+**Access the application**: https://medical-pharmacy-inventory-manageme.vercel.app/
 
 **Database**: pharmacy.db (SQLite)
 
 **Total Records**: 1000+ medicines, 5 suppliers
+
